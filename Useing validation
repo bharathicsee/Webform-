@@ -1,0 +1,289 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Data.SqlClient;
+using System.Data;
+using System.Configuration;
+using System.Web.Services;
+
+namespace Restrationform
+{
+    public partial class WebForm1 : System.Web.UI.Page
+    {
+        string connectionString = ConfigurationManager.ConnectionStrings["Restration"].ConnectionString;
+        protected void Page_Load(object sender, EventArgs e)
+        {
+
+        }
+        [System.Web.Services.WebMethod]
+        public static bool CheckCandidateName(string candidateName)
+        { 
+            using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["Restration"].ConnectionString))
+            {
+                conn.Open();
+                SqlCommand cmd = new SqlCommand("SELECT COUNT(*) FROM [dbo].[CondidateDetails] WHERE CondidateName = @Name", conn);
+                cmd.Parameters.AddWithValue("@Name", candidateName);
+                int count = (int)cmd.ExecuteScalar();
+                return count > 0; // true if exists
+            }
+        }
+
+        [System.Web.Services.WebMethod]
+        public static bool CheckCandidateNumber(string candidateName)
+        {
+            using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["Restration"].ConnectionString))
+            {
+                conn.Open();
+                SqlCommand cmd = new SqlCommand("SELECT COUNT(*) FROM [dbo].[CondidateDetails] WHERE MobileNo = @MobileNo", conn);
+                cmd.Parameters.AddWithValue("@MobileNo", candidateName);
+                int count = (int)cmd.ExecuteScalar();
+                return count > 0; // true if exists
+            }
+        }
+
+        protected void Save(object sender, EventArgs e)
+        {
+            try
+            {
+                SqlConnection con = new SqlConnection(connectionString);
+
+                SqlCommand cmd = new SqlCommand("[dbo].[USP_InsertCondidateDetails]", con);
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.Add("@CondidateName", SqlDbType.VarChar).Value = CandidateName.Text;
+                cmd.Parameters.Add("@MobileNo", SqlDbType.NVarChar).Value = CandidateNumber.Text;
+                cmd.Parameters.Add("@EmailId", SqlDbType.NVarChar).Value = EmailId.Text;
+                cmd.Parameters.Add("@Age", SqlDbType.Int).Value = Convert.ToInt32(Age.Text);
+                cmd.Parameters.Add("@CompanyId", SqlDbType.NVarChar).Value = 1;
+
+                SqlParameter statusParam = cmd.Parameters.Add("@Status", SqlDbType.Bit);
+                statusParam.Direction = ParameterDirection.Output;
+
+                SqlParameter messageParam = cmd.Parameters.Add("@Messaga", SqlDbType.NVarChar, 500);
+                messageParam.Direction = ParameterDirection.Output;
+
+                con.Open();
+                cmd.ExecuteNonQuery();
+
+                bool statusResult = (bool)statusParam.Value;
+                string messageResult = messageParam.Value.ToString();
+                if (statusResult == false)
+                {
+                    Error_Message.Text = messageResult;
+                    Error_Message.ForeColor = System.Drawing.Color.Red;
+                }
+                else
+                {
+                    Error_Message.Text = messageResult;
+                    Error_Message.ForeColor = System.Drawing.Color.Green;
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+                Response.Write(Error_Message.Text = ex.Message);
+                Response.Write(Error_Message.ForeColor = System.Drawing.Color.Red);
+            }
+        }
+    }
+}
+
+====================================================================================================================================================
+  <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="Registration.aspx.cs" Inherits="Restrationform.WebForm1" %>
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.13.1/font/bootstrap-icons.min.css" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+</head>
+<body>
+    <style>
+        #Registar {
+            margin-left: 21em;
+            border: solid;
+            margin-right: 22em;
+            height: 23em;
+        }
+
+
+            #Registar h1 {
+                text-align: center;
+            }
+
+        #lblNumber {
+            margin-left: 12.5em;
+        }
+
+
+        #lblAge {
+            margin-left: 15.5em;
+        }
+
+        #CandidateNumber {
+            margin-left: 9.5em;
+            width: 33%;
+            padding: 6px;
+            box-sizing: border-box;
+        }
+
+        #lblName {
+            margin-left: 1em;
+        }
+
+
+
+        #lblEmailId {
+            margin-left: 1em;
+        }
+
+        #Age {
+            margin-left: 9.5em;
+            width: 33%;
+            padding: 6px;
+            box-sizing: border-box;
+        }
+
+        #EmailId {
+            margin-left: 1em;
+            width: 33%;
+            padding: 6px;
+            box-sizing: border-box;
+        }
+
+        #CandidateName {
+            margin-left: 1em;
+            width: 33%;
+            padding: 6px;
+            box-sizing: border-box;
+        }
+
+        .styled-textbox {
+            width: 280px;
+            padding: 10px;
+            border: 2px solid #000000;
+            border-radius: 6px;
+            font-size: 15px;
+            font-family: Arial, sans-serif;
+            outline: none;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+            .styled-textbox:focus {
+                border-color: #000000;
+                box-shadow: 0 0 6px rgba(46, 139, 87, 0.5);
+            }
+
+        .btn-save {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-left: 14em;
+            margin-top: 3em;
+        }
+
+            .btn-save:hover {
+                background-color: #45a049;
+            }
+
+        #Error_Message {
+            margin-left: 60em;
+        }
+    </style>
+    <form id="form1" runat="server">
+        <div>
+            <asp:Label ID="Error_Message" runat="server" Text=" "></asp:Label>
+            <div id="Registar">
+                <h1>Registration From <i class="bi bi-info-circle-fill"></i></h1>
+                <hr />
+                <asp:Label ID="lblName"><i class="bi bi-person-fill"></i> CandidateName :</asp:Label>
+                <asp:Label ID="lblNumber"> <i class="bi bi-telephone-fill"></i> MobileNo :</asp:Label>
+                <div>
+                    <asp:TextBox ID="CandidateName" runat="server" CssClass="styled-textbox" placeholder="Enter your Name"></asp:TextBox>
+
+                    <asp:TextBox ID="CandidateNumber" runat="server" CssClass="styled-textbox" placeholder="Enter your Number"></asp:TextBox>
+                    <br />
+                    <span id="nameError" style="color: red; margin-left: 1em; display: none;"> Name already exists!</span>
+                    
+                    <span id="NumberError" style="color: red; margin-left: 12em;  display: none;"> Number already exists!</span>
+
+                </div>
+                <br />
+                <asp:Label ID="lblEmailId"><i class="bi bi-person-fill"></i> EmailId :</asp:Label>
+                <asp:Label ID="lblAge"> <i class="bi bi-telephone-fill"></i> Age :</asp:Label>
+                <div>
+                    <asp:TextBox ID="EmailId" runat="server" CssClass="styled-textbox" placeholder="Enter your EmailId"></asp:TextBox>
+
+                    <asp:TextBox ID="Age" runat="server" CssClass="styled-textbox" placeholder="Enter your Age" TextMode="Number"></asp:TextBox>
+                </div>
+                <asp:Button ID="Button1" runat="server" Text="Save" OnClick="Save" CssClass="btn-save" />
+            </div>
+        </div>
+    </form>
+    <script type="text/javascript">
+    $(document).ready(function () {
+        $("#<%= CandidateName.ClientID %>").blur(function () {
+            var name = $(this).val();
+            if (name.length > 0) {
+                $.ajax({
+                    type: "POST",
+                    url: "Registration.aspx/CheckCandidateName",
+                    data: JSON.stringify({ candidateName: name }),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function (response) {
+                        if (response.d) {
+                            $("#nameError").show();
+                        } else {
+                            $("#nameError").hide();
+                        }
+                    },
+                    error: function () {
+                        alert("Error checking name.");
+                    }
+                });
+            }
+        });
+    });
+        
+    $(document).ready(function () {
+        $("#<%= CandidateNumber.ClientID %>").blur(function () {
+            var name = $(this).val();
+            if (name.length > 0) {
+                $.ajax({
+                    type: "POST",
+                    url: "Registration.aspx/CheckCandidateNumber",
+                    data: JSON.stringify({ candidateName: name }),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function (response) {
+                        if (response.d) {
+                            $("#NumberError").show();
+                        } else {
+                            $("#NumberError").hide();
+                        }
+                    },
+                    error: function () {
+                        alert("Error checking name.");
+                    }
+                });
+            }
+        });
+    });
+</script>
+</body>
+</html>
+
+
